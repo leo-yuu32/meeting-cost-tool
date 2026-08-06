@@ -11,6 +11,12 @@ computes and exports Cost_p and the resulting longest remaining usable
 block, one person at a time, reusing marginal_cost_for_person from
 marginal.py for the actual model logic.
 
+A low Cost_p does not imply a slot is bookable - a candidate that overlaps
+an existing meeting can merge into it and come out cheap (or even free),
+which is a correct cost but an infeasible slot. Feasibility is a separate,
+literal overlap check against the person's own calendar (see _is_busy),
+exported as its own "busy" table rather than inferred from cost.
+
 Run from engine/: python scripts/export_lookup.py
 Writes into web/public/scenarios/lookup.json - a static fixture, matching
 CLAUDE.md's "mock-up, not an integration."
@@ -42,6 +48,17 @@ DEFAULT_MEETING_LENGTH_MINUTES = (15, 60)
 
 def _minutes_from_midnight(dt: datetime) -> int:
     return dt.hour * 60 + dt.minute
+
+
+def _is_busy(existing: list[Meeting], slot_start: datetime, slot_end: datetime) -> bool:
+    """True if any of the person's existing meetings overlaps [slot_start, slot_end).
+
+    Computed directly from the calendar, independent of cost: a slot can be
+    cheap (e.g. the candidate abuts or is absorbed into an existing run) and
+    still be unbookable because it actually overlaps something already
+    there. Touching (zero-overlap) is not busy - only real time overlap is.
+    """
+    return any(m.start < slot_end and m.end > slot_start for m in existing)
 
 
 def build_lookup(
@@ -88,26 +105,31 @@ def build_lookup(
 
     costs: dict[str, dict[str, dict[str, float]]] = {}
     longest_block: dict[str, dict[str, dict[str, float]]] = {}
+    busy: dict[str, dict[str, dict[str, bool]]] = {}
 
     for person in people:
         existing = existing_by_person[person.id]
         costs[person.id] = {}
         longest_block[person.id] = {}
+        busy[person.id] = {}
         for slot_start in slot_starts:
             slot_key = str(_minutes_from_midnight(slot_start))
             costs[person.id][slot_key] = {}
             longest_block[person.id][slot_key] = {}
+            busy[person.id][slot_key] = {}
             for duration in durations:
+                slot_end = slot_start + timedelta(minutes=duration)
                 candidate = Meeting(
                     id=f"lookup-{person.id}-{slot_key}-{duration}",
                     start=slot_start,
-                    end=slot_start + timedelta(minutes=duration),
+                    end=slot_end,
                     attendee_ids=(person.id,),
                 )
                 result = marginal_cost_for_person(person, existing, candidate, day)
                 duration_key = str(duration)
                 costs[person.id][slot_key][duration_key] = result.cost_minutes
                 longest_block[person.id][slot_key][duration_key] = result.longest_remaining_block_minutes
+                busy[person.id][slot_key][duration_key] = _is_busy(existing, slot_start, slot_end)
 
     return {
         "seed": seed,
@@ -117,6 +139,7 @@ def build_lookup(
         "durations": list(durations),
         "costs": costs,
         "longest_block": longest_block,
+        "busy": busy,
     }
 
 
