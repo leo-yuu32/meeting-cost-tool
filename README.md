@@ -34,8 +34,8 @@ It has two jobs:
 The core model:
 
 $$
-P(M) \;=\; \bigl(|W| - c\bigr)
-\;+\; \underbrace{\sum_{g \in G(M)} - \max\bigl(0,\; |g| - c\bigr)}_{\text{fragmentation}}
+P(M) \; = \; \bigl(|W| - c\bigr)
+\; + \; \underbrace{\sum_{g \in G(M)} - \max\bigl(0,\; |g| - c\bigr)}_{\text{fragmentation}}
 \;+\; \underbrace{\lambda \sum_{r \in R(M)} \max\bigl(0,\; |r| - r^{*}\bigr)}_{\text{fatigue}}
 \;+\; \underbrace{\mu \cdot \mathbf{1}\Bigl[\, \nexists\, g \in G(M) : g \subseteq L \;\wedge\; |g| \ge \ell \,\Bigr]}_{\text{lunch}}
 $$
