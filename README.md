@@ -86,7 +86,7 @@ instead attributes the day penalty across meetings by **Shapley value**:
 
 $$\varphi_i = \sum_{S \subseteq N \setminus \{i\}} \frac{|S|!\,(n-|S|-1)!}{n!}\Big[P(S \cup \{i\}) - P(S)\Big]$$
 
-which is efficient (attributions sum exactly to $P(N)$) and order-independent.
+which is efficient (attributions sum exactly to $$P(N)$$) and order-independent.
 
 **Every model output is in minutes of focus time destroyed** (or hours
 derived from that). There is no abstract cost index anywhere.
