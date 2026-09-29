@@ -1,0 +1,268 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper, margin=2.5cm]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{parskip}
+\usepackage[hidelinks]{hyperref}
+
+\title{A Focus-Cost Model for Meeting Placement}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Motivation}
+
+Meeting fatigue is usually attributed to the number of meetings. This
+document sets out a model in which the dominant factor is instead
+\emph{fragmentation}: where meetings sit within a day, rather than how much
+of the day they occupy.
+
+Two hours of meetings placed at 09:00 and 15:00 leave nobody with more than
+three hours of uninterrupted time. The same two hours booked 09:00 to 11:00
+leave a five hour block. The load is identical; the days are not.
+
+\section{Notation}
+
+All quantities are defined for a single person on a single day. The day is
+the unit of computation because the interactions that matter, namely
+fragmentation, fatigue and the loss of a lunch break, occur within a day and
+not across days.
+
+\subsection*{Sets}
+
+\begin{tabular}{@{}ll@{}}
+\toprule
+$W = [w_s, w_e]$ & working window \\
+$M$ & the person's meetings on the day \\
+$G(M)$ & gaps: free intervals within $W$ induced by $M$ \\
+$R(M)$ & runs: maximal contiguous stretches of meeting time \\
+$A(m)$ & attendee list of a candidate meeting $m$ \\
+$N$, $n = |N|$ & meetings in a person-day, used for attribution \\
+\bottomrule
+\end{tabular}
+
+\medskip
+
+Gaps and runs are derived from $M$, not stored. Overlapping meetings merge
+into a single run.
+
+\subsection*{Parameters}
+
+\begin{tabular}{@{}llll@{}}
+\toprule
+Symbol & Meaning & Default & Kind \\
+\midrule
+$c$ & re-entry cost & 20 min & measurement \\
+$\lambda$ & fatigue rate & 0.4 & measurement \\
+$r^{*}$ & fatigue threshold & 90 min & measurement \\
+$\mu$ & lunch penalty & 60 min & policy \\
+$L$ & lunch window & 12:00--14:00 & policy \\
+$\ell$ & required lunch length & 60 min & policy \\
+\bottomrule
+\end{tabular}
+
+\medskip
+
+Measurement parameters are intended to be fitted against self-reported data
+and are not asserted. Policy parameters encode a norm the organisation
+chooses and are not subject to calibration. $\lambda$ is dimensionless; all
+other parameters are in minutes.
+
+\section{The model}
+
+\subsection{Gap yield}
+
+A free interval is not worth its face value, since some minutes at the start
+of any free stretch are lost re-entering the task:
+\[
+u(g) \;=\; \max\bigl(0,\; |g| - c\bigr)
+\]
+
+A 60-minute gap yields 40 minutes of usable focus. A 15-minute gap yields
+nothing at all. The re-entry cost is paid once per gap, so a day broken into
+four pieces pays it four times.
+
+\subsection{Fatigue}
+
+Long unbroken runs of meetings degrade what follows them:
+\[
+\Phi(M) \;=\; \lambda \sum_{r \in R(M)} \max\bigl(0,\; |r| - r^{*}\bigr)
+\]
+
+This is convex in run length, so the fourth consecutive meeting is charged
+more than the first.
+
+\subsection{Lunch protection}
+
+A day leaving no adequate break within the lunch window is penalised. The
+check is against raw gap lengths rather than gap yields, and is all or
+nothing:
+\[
+\Lambda(M) \;=\; \mu \cdot \mathbf{1}\Bigl[\, \nexists\, g \in G(M) \;:\;
+g \subseteq L \;\wedge\; |g| \ge \ell \,\Bigr]
+\]
+
+\subsection{Usable focus time and the day penalty}
+
+Write $Y(M)$ for the total yield of the day's free intervals:
+\[
+Y(M) \;=\; \sum_{g \in G(M)} \max\bigl(0,\; |g| - c\bigr)
+\]
+
+Usable focus time subtracts the two charges from that yield:
+\[
+U(M) \;=\; Y(M) \;-\; \Phi(M) \;-\; \Lambda(M)
+\]
+
+An empty day contains a single gap spanning $W$, so
+\[
+U(\varnothing) \;=\; |W| - c
+\]
+and the day penalty is the shortfall against it:
+\[
+P(M) \;=\; U(\varnothing) - U(M)
+\]
+
+$P$ is denominated in minutes of focus time destroyed. An empty day scores
+zero; a fully booked day scores $|W| - c$.
+
+\subsection{Collected form}
+
+Expanding every term gives the penalty function in full, as three
+contributions to the shortfall against a clear day:
+
+\begin{center}
+\resizebox{\textwidth}{!}{$\displaystyle
+P(M) \;=\; \bigl(|W| - c\bigr)
+\;+\; \underbrace{\sum_{g \in G(M)} -\max\bigl(0,\; |g| - c\bigr)}_{\text{fragmentation}}
+\;+\; \underbrace{\lambda \sum_{r \in R(M)} \max\bigl(0,\; |r| - r^{*}\bigr)}_{\text{fatigue}}
+\;+\; \underbrace{\mu \cdot \mathbf{1}\Bigl[\, \nexists\, g \in G(M) : g \subseteq L \;\wedge\; |g| \ge \ell \,\Bigr]}_{\text{lunch}}
+$}
+\end{center}
+
+The fragmentation term is the negative of the day's focus yield. The more
+usable focus the day retains, the smaller the shortfall, so a day broken
+into more pieces contributes more to $P$ through paying $c$ once per gap.
+
+\section{Marginal cost}
+
+The cost of a candidate meeting is the increase in day penalty it causes,
+summed over everyone invited:
+\[
+\mathrm{Cost}_p(m \mid M) \;=\; P\bigl(M \cup \{m\}\bigr) - P(M)
+\qquad
+\mathrm{Cost}(m) \;=\; \sum_{p \in A(m)} \mathrm{Cost}_p\bigl(m \mid M_p\bigr)
+\]
+
+Since $U(\varnothing)$ cancels between the two evaluations, this decomposes
+into the change in each component:
+\[
+\mathrm{Cost}_p(m \mid M) \;=\;
+\underbrace{\bigl[\, Y(M) - Y(M \cup \{m\}) \,\bigr]}_{\text{focus yield lost}}
+\;+\; \underbrace{\bigl[\, \Phi(M \cup \{m\}) - \Phi(M) \,\bigr]}_{\text{fatigue added}}
+\;+\; \underbrace{\bigl[\, \Lambda(M \cup \{m\}) - \Lambda(M) \,\bigr]}_{\text{lunch added}}
+\]
+
+Marginal cost is a function of calendar state, not a property of the
+meeting. It is not additive: subadditive when meetings abut, since the
+second pays only its duration, and superadditive once a combined run exceeds
+$r^{*}$.
+
+\section{Closed form under the fragmentation term}
+
+The results in this section hold when $\Phi$ and $\Lambda$ do not bind. Both
+additional terms deliberately break them.
+
+For a candidate of duration $D$ placed inside a single gap of length $g$,
+leaving fragments $a$ on the left and $b$ on the right with $a + D + b = g$:
+\[
+\mathrm{Cost} \;=\; \max(0, g-c) \;-\; \max(0, a-c) \;-\; \max(0, b-c)
+\;=\;
+\begin{cases}
+D + c, & a \ge c \;\wedge\; b \ge c \\[2pt]
+D + a, & a < c \;\wedge\; b \ge c \\[2pt]
+D + b, & a \ge c \;\wedge\; b < c \\[2pt]
+g - c, & a < c \;\wedge\; b < c
+\end{cases}
+\]
+
+Cost is therefore constant at $D + c$ across the interior of a gap and falls
+linearly to $D$ at its edges. The fourth case gives a cost below the
+meeting's own duration, which is correct: a candidate filling a gap entirely
+consumes time that was partly lost to re-entry regardless.
+
+\subsection{Spread}
+
+It follows that when a flush position exists for every attendee, the
+difference between the dearest and cheapest bookable slot is
+\[
+\max_{s} \mathrm{Cost}(m_s) \;-\; \min_{s} \mathrm{Cost}(m_s)
+\;=\; |A| \cdot c
+\]
+independent of duration and of the shape of the day. Each attendee pays
+either $D$ or $D + c$, so the difference is $c$ per attendee.
+
+This is a prediction rather than an observation, and it was confirmed on 13
+of 20 randomly generated scenarios. The remaining seven lacked a candidate
+position leaving every attendee flush, and so never reached the lower bound.
+
+\section{Retrospective attribution}
+
+Marginal cost depends on the order in which meetings were booked, which is
+invisible on a calendar, so it cannot be used to rank meetings against one
+another. For a person-day with meeting set $N$, allocate the day penalty by
+Shapley value: each meeting's marginal contribution, averaged over every
+order in which the meetings could have arrived.
+\[
+\varphi_i \;=\; \sum_{S \subseteq N \setminus \{i\}}
+\frac{|S|!\,\bigl(n - |S| - 1\bigr)!}{n!}
+\Bigl[\, P\bigl(S \cup \{i\}\bigr) - P(S) \,\Bigr]
+\]
+
+This is the unique allocation satisfying efficiency, symmetry, the null
+player property and additivity. Efficiency,
+\[
+\sum_{i \in N} \varphi_i \;=\; P(N),
+\]
+is the property that matters in practice: attributions across a day sum
+exactly to that day's penalty, so per-meeting figures reconcile with
+per-person totals.
+
+Exact computation requires $n \cdot 2^{\,n-1}$ evaluations of $P$, which is
+negligible for the meeting counts found in a single day. Above roughly
+$n = 12$ the implementation samples permutations by Monte Carlo and reports
+a standard error.
+
+\subsection{Which measure belongs where}
+
+Marginal cost is prospective and answers \emph{what will this booking cost},
+so it belongs in the scheduling view, where state-dependence is information
+rather than distortion. Shapley attribution is retrospective and answers
+\emph{what share of this day's damage does this meeting own}, so it belongs
+on the calendar, where the figures are expected to sum.
+
+\section{Limitations}
+
+\textbf{Linear gap yield.} $u(g)$ treats a minute of free time as equally
+valuable regardless of the block it sits in, so breaking a four-hour block
+and breaking a forty-minute gap are priced similarly. Weighting yield by
+block quality, for instance $u(g) = (g - c)\min(1, g/g^{*})$, would
+distinguish them at the cost of one further parameter and of the closed form
+above.
+
+\textbf{No benefit term.} The model prices cost and never value. Its
+unconstrained optimum is to hold no meetings, which is plainly wrong. A
+sampled post-meeting value signal would give a cost-versus-value view, but
+requires participation in a way the cost side does not.
+
+\textbf{Uncalibrated parameters.} The measurement parameters are starting
+values. The intended fitting procedure is a grid search maximising Spearman
+rank correlation between $P$ and participants' own rankings of their past
+weeks.
+
+\end{document}
