@@ -1,5 +1,11 @@
 # Meeting Cost Tool
 
+[![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Status](https://img.shields.io/badge/status-phase%201%20prototype-orange?style=flat-square)](#status)
+
 When you book a meeting, Teams tells you who is free. Free is binary: it
 has no notion that 15:00 might suit the whole group while 11:00 fragments
 four people's mornings.
@@ -11,11 +17,10 @@ productivity company-wide. So the next time your boss complains about you
 scheduling a meeting at 4:30pm, you can tell them it was "mathematically
 optimal".
 
-> [!TIP]
-> The full mathematical write-up, derivations, the closed form for a
-> single-gap booking, and the model's limitations, is in
-> [`docs/focus-cost-model.pdf`](./docs/focus-cost-model.pdf)
-> ([LaTeX source](./docs/focus-cost-model.tex)).
+The full mathematical write-up, derivations, the closed form for a
+single-gap booking, and the model's limitations, is in
+[`docs/focus-cost-model.pdf`](./docs/focus-cost-model.pdf)
+([LaTeX source](./docs/focus-cost-model.tex)).
 
 The core premise: fatigue is driven mainly by the **fragmentation** of
 focus time, not by total meeting hours. A calendar with three short gaps
@@ -160,10 +165,9 @@ npm run lint      # oxlint
 
 ## Status
 
-> [!IMPORTANT]
-> All calendar data in this repo is synthetic: there is no real calendar
-> ingestion, and none is planned here. This is a mock-up built to
-> demonstrate the model, not a product to ship.
+All calendar data in this repo is synthetic: there is no real calendar
+ingestion, and none is planned here. This is a mock-up built to
+demonstrate the model, not a product to ship.
 
 Phase 1 covers the penalty function, marginal cost and slot ranking,
 Shapley attribution, a synthetic calendar generator, and the React
