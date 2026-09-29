@@ -57,11 +57,14 @@ def test_calibration_reentry_cost_flips_which_week_looks_worse():
     # Person A: one 60-min meeting -> P(c) = 60 + c (closed-form interior slot).
     # Person B: six 2-min meetings, each isolated and interior -> P(c) = 6*(2+c) = 12 + 6c.
     # At c=0, A's week looks worse (60 > 12); by c=20, B's does (132 > 80).
+    # Meetings are kept clear of the 12:00-14:00 lunch window (both leave a
+    # contiguous 120+ min stretch of it untouched) so lunch protection's
+    # binary mu doesn't add a third term to what this test is isolating.
     person_a = person("a")
-    meetings_a = [meeting("a1", dt(0, 12, 0), 60, attendees=("a",))]
+    meetings_a = [meeting("a1", dt(0, 9, 30), 60, attendees=("a",))]
 
     person_b = person("b")
-    small_starts = [(9, 30), (10, 30), (11, 30), (12, 30), (13, 30), (14, 30)]
+    small_starts = [(9, 30), (10, 30), (11, 30), (14, 30), (15, 30), (16, 30)]
     meetings_b = [
         meeting(f"b{i}", dt(0, h, m), 2, attendees=("b",)) for i, (h, m) in enumerate(small_starts)
     ]

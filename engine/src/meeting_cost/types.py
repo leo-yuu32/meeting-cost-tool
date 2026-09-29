@@ -32,6 +32,11 @@ class Person:
     reentry_cost: float | None = None
     fatigue_rate: float | None = None
     fatigue_threshold: float | None = None
+    # Lunch protection policy overrides (see model.py's DEFAULT_LUNCH_*).
+    # lunch_window is (start, end) in minutes from midnight.
+    lunch_window: tuple[float, float] | None = None
+    lunch_minutes: float | None = None
+    lunch_penalty: float | None = None
 
     def __post_init__(self) -> None:
         for weekday, (start, end) in self.window_by_weekday.items():

@@ -225,3 +225,5 @@ frontend/.vite/
 # Front end (Vite + React)
 web/node_modules/
 web/dist/
+.vercel
+.env*

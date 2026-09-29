@@ -133,3 +133,42 @@ def test_day_penalty_filters_by_attendee_and_date():
     )
     result = day_penalty(person, [other_persons_meeting], DAY)
     assert result.penalty_minutes == 0
+
+
+def test_lunch_protection_clear_gap_incurs_nothing():
+    # 12:00-13:00 is free and exactly meets lunch_minutes (60) - the
+    # boundary case, not just comfortably clear of it.
+    person = _person()
+    meetings = [_meeting("m1", 9, 0, 12, 0), _meeting("m2", 13, 0, 17, 0)]
+    result = day_penalty(person, meetings, DAY)
+    assert result.lunch_penalty_minutes == 0
+
+
+def test_lunch_protection_meeting_leaving_only_30_either_side_incurs_mu():
+    # A single 12:30-13:30 meeting leaves 12:00-12:30 and 13:30-14:00 free
+    # within the lunch window - 30 min each, neither reaching lunch_minutes.
+    person = _person()
+    meetings = [_meeting("m1", 12, 30, 13, 30)]
+    result = day_penalty(person, meetings, DAY)
+    assert result.lunch_penalty_minutes == 60
+
+
+def test_lunch_protection_meeting_outside_lunch_window_incurs_nothing():
+    person = _person()
+    meetings = [_meeting("m1", 9, 0, 10, 0)]
+    result = day_penalty(person, meetings, DAY)
+    assert result.lunch_penalty_minutes == 0
+
+
+def test_lunch_protection_is_not_charged_twice():
+    # Day already lacking a valid lunch break (per the 30/30-split case
+    # above); adding an unrelated, far-away meeting must not double mu -
+    # Lambda(M) is binary, not per-meeting.
+    person = _person()
+    already_blocked = [_meeting("m1", 12, 30, 13, 30)]
+    result_before = day_penalty(person, already_blocked, DAY)
+    assert result_before.lunch_penalty_minutes == 60
+
+    with_extra_meeting = already_blocked + [_meeting("m2", 9, 0, 9, 30)]
+    result_after = day_penalty(person, with_extra_meeting, DAY)
+    assert result_after.lunch_penalty_minutes == 60

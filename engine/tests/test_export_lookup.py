@@ -11,7 +11,15 @@ SCRIPTS_DIR = Path(__file__).resolve().parent.parent / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from export_lookup import _is_busy, build_lookup, write_lookup  # noqa: E402
+from export_lookup import (  # noqa: E402
+    DEFAULT_DURATION_WEIGHTS,
+    DEFAULT_MEETING_LENGTH_MINUTES,
+    DEFAULT_MEETINGS_PER_DAY,
+    _is_busy,
+    _window_union_minutes,
+    build_lookup,
+    write_lookup,
+)
 
 from meeting_cost.marginal import marginal_cost, marginal_cost_for_person
 from meeting_cost.synthetic import generate_week
@@ -50,7 +58,108 @@ def test_build_lookup_shape():
                 assert isinstance(data["longest_block"][person_id][slot_key][duration_key], (int, float))
                 assert isinstance(data["busy"][person_id][slot_key][duration_key], bool)
 
+    assert set(data["meetings"].keys()) == people_ids
+    for person_id in people_ids:
+        for interval in data["meetings"][person_id]:
+            assert set(interval.keys()) == {"id", "start", "end"}
+            assert isinstance(interval["id"], str)
+            assert isinstance(interval["start"], int)
+            assert isinstance(interval["end"], int)
+            assert interval["start"] < interval["end"]
+
+    assert set(data["window"].keys()) == {"start", "end"}
+    assert isinstance(data["window"]["start"], int)
+    assert isinstance(data["window"]["end"], int)
+    assert data["window"]["start"] < data["window"]["end"]
+
+    assert set(data["attribution"].keys()) == people_ids
+    assert set(data["day_penalty"].keys()) == people_ids
+    for person_id in people_ids:
+        assert isinstance(data["day_penalty"][person_id], (int, float))
+        for meeting_id, value in data["attribution"][person_id].items():
+            assert isinstance(meeting_id, str)
+            assert isinstance(value, (int, float))
+
     json.dumps(data)  # must be JSON-serializable, matching what gets written to disk
+
+
+def test_attribution_meeting_ids_match_the_meetings_table():
+    data = build_lookup(seed=SEED, person_ids=PERSON_IDS, week_start=WEEK_START)
+    for person_id in [p["id"] for p in data["people"]]:
+        attributed_ids = set(data["attribution"][person_id].keys())
+        meeting_ids = {m["id"] for m in data["meetings"][person_id]}
+        assert attributed_ids == meeting_ids
+
+
+def test_attribution_sums_to_day_penalty_for_every_person():
+    # Efficiency is the whole reason to use Shapley here (CLAUDE.md section
+    # 2): attributions across a person-day's meetings must sum exactly to
+    # that day's P. If this ever fails, the export's wiring has diverged
+    # from shapley.py, not the Shapley math itself (that's covered in
+    # test_shapley.py).
+    data = build_lookup(seed=SEED, person_ids=PERSON_IDS, week_start=WEEK_START)
+    for person_id in [p["id"] for p in data["people"]]:
+        total_attribution = sum(data["attribution"][person_id].values())
+        assert total_attribution == pytest.approx(data["day_penalty"][person_id])
+
+
+def test_window_matches_the_working_window_when_everyone_shares_one():
+    data = build_lookup(seed=SEED, person_ids=PERSON_IDS, week_start=WEEK_START)
+    # generate_week gives every person the same default 09:00-17:00 window,
+    # so the union should equal exactly that.
+    assert data["window"] == {"start": 9 * 60, "end": 17 * 60}
+
+
+def test_window_union_minutes_unions_differing_person_windows():
+    people = [
+        Person(id="a", window_by_weekday={0: (time(9), time(17))}),
+        Person(id="b", window_by_weekday={0: (time(8), time(16))}),
+        Person(id="c", window_by_weekday={0: (time(9, 30), time(18))}),
+    ]
+    assert _window_union_minutes(people, 0) == (8 * 60, 18 * 60)
+
+
+def test_window_union_minutes_skips_people_without_a_window_that_day():
+    people = [
+        Person(id="a", window_by_weekday={0: (time(9), time(17))}),
+        Person(id="b", window_by_weekday={1: (time(9), time(17))}),  # not working weekday 0
+    ]
+    assert _window_union_minutes(people, 0) == (9 * 60, 17 * 60)
+
+
+def test_window_union_minutes_raises_when_nobody_works_that_day():
+    people = [Person(id="a", window_by_weekday={1: (time(9), time(17))})]
+    with pytest.raises(ValueError):
+        _window_union_minutes(people, 0)
+
+
+def test_meetings_export_is_sorted_and_matches_generate_week_directly():
+    data = build_lookup(seed=SEED, person_ids=PERSON_IDS, week_start=WEEK_START)
+
+    people, meetings = generate_week(
+        PERSON_IDS,
+        WEEK_START,
+        seed=SEED,
+        meetings_per_day=DEFAULT_MEETINGS_PER_DAY,
+        meeting_length_minutes=DEFAULT_MEETING_LENGTH_MINUTES,
+        duration_weights=DEFAULT_DURATION_WEIGHTS,
+    )
+
+    for person in people:
+        expected = sorted(
+            (
+                (m.id, m.start.hour * 60 + m.start.minute, m.end.hour * 60 + m.end.minute)
+                for m in meetings
+                if person.id in m.attendee_ids and m.start.date() == WEEK_START
+            ),
+            key=lambda t: t[1],
+        )
+        actual = [(m["id"], m["start"], m["end"]) for m in data["meetings"][person.id]]
+        assert actual == expected
+
+        # sorted ascending by start, as claimed
+        starts = [m["start"] for m in data["meetings"][person.id]]
+        assert starts == sorted(starts)
 
 
 def test_busy_table_is_key_aligned_with_costs():
@@ -146,8 +255,9 @@ def test_summing_a_subset_matches_calling_the_engine_directly():
         PERSON_IDS,
         WEEK_START,
         seed=SEED,
-        meetings_per_day=(1, 3),
-        meeting_length_minutes=(15, 60),
+        meetings_per_day=DEFAULT_MEETINGS_PER_DAY,
+        meeting_length_minutes=DEFAULT_MEETING_LENGTH_MINUTES,
+        duration_weights=DEFAULT_DURATION_WEIGHTS,
     )
     existing_by_person = {p.id: [m for m in meetings if p.id in m.attendee_ids] for p in people}
     slot_start = datetime.combine(WEEK_START, time(0)) + timedelta(minutes=slot_minutes)
@@ -170,7 +280,12 @@ def test_summing_the_full_attendee_list_also_matches():
     looked_up_total = sum(data["costs"][pid][str(slot_minutes)][str(duration)] for pid in PERSON_IDS)
 
     people, meetings = generate_week(
-        PERSON_IDS, WEEK_START, seed=SEED, meetings_per_day=(1, 3), meeting_length_minutes=(15, 60)
+        PERSON_IDS,
+        WEEK_START,
+        seed=SEED,
+        meetings_per_day=DEFAULT_MEETINGS_PER_DAY,
+        meeting_length_minutes=DEFAULT_MEETING_LENGTH_MINUTES,
+        duration_weights=DEFAULT_DURATION_WEIGHTS,
     )
     existing_by_person = {p.id: [m for m in meetings if p.id in m.attendee_ids] for p in people}
     slot_start = datetime.combine(WEEK_START, time(0)) + timedelta(minutes=slot_minutes)
@@ -180,6 +295,20 @@ def test_summing_the_full_attendee_list_also_matches():
     direct = marginal_cost(people, existing_by_person, candidate)
 
     assert looked_up_total == pytest.approx(direct.total_cost_minutes)
+
+
+def test_retention_matches_one_minus_penalty_over_clear_day_yield_for_every_person():
+    data = build_lookup(seed=SEED, person_ids=PERSON_IDS, week_start=WEEK_START)
+    for person_id in [p["id"] for p in data["people"]]:
+        expected = 1.0 - data["day_penalty"][person_id] / data["clear_day_yield"][person_id]
+        assert data["retention"][person_id] == pytest.approx(expected)
+
+
+def test_retention_is_one_for_an_empty_calendar():
+    # No meetings at all means P(M) = 0, so retention should be exactly 1.0.
+    data = build_lookup(seed=SEED, person_ids=["alice"], week_start=WEEK_START, meetings_per_day=(0, 0))
+    assert data["day_penalty"]["alice"] == pytest.approx(0.0)
+    assert data["retention"]["alice"] == pytest.approx(1.0)
 
 
 def test_write_lookup_creates_file_with_matching_content(tmp_path):

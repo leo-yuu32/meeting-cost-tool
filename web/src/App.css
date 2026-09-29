@@ -5,11 +5,31 @@
   padding: 32px 40px 64px;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 24px;
+}
+
+.booking-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
 }
 
 .booking-header h1 {
+  /* Stepped up from the h2 scale (24px) to h1's own default scale
+     (index.css) for presentation legibility - the next rung up, not a
+     new value. Its responsive step (36px under 1024px) comes along with
+     it for the same reason. Kept the tighter 118% line-height rather
+     than reverting to h1's own inherited 145%, since that was a
+     deliberate compactness choice, not part of the size itself. */
+  font-size: 56px;
+  line-height: 118%;
+  letter-spacing: -1.68px;
   margin: 0 0 4px;
+
+  @media (max-width: 1024px) {
+    font-size: 36px;
+  }
 }
 
 .booking-meta {
@@ -22,15 +42,31 @@
   text-align: center;
 }
 
-section h2 {
-  font-size: 18px;
-  margin: 0 0 4px;
+/* Shared label + control grouping for page-level chrome (view toggle,
+   duration control) - not part of any individual view. Label reuses the
+   same 11px/uppercase treatment as teams-header-label and
+   calendar-footer-label; the 4px gap matches the header's own h1-to-meta
+   spacing. */
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.section-hint {
-  font-size: 13px;
+.control-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: var(--text);
-  margin: 0 0 12px;
+}
+
+/* View toggle and theme toggle (both reuse .pill/.pill-selected) */
+
+.view-toggle,
+.theme-toggle {
+  display: flex;
+  gap: 8px;
 }
 
 /* Duration pills */
@@ -62,121 +98,9 @@ section h2 {
   color: var(--text-h);
 }
 
-/* Attendee chips */
+/* Summary row */
 
-.attendee-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.chip {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  font: inherit;
-  min-width: 96px;
-  padding: 8px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--code-bg);
-  color: var(--text);
-  cursor: pointer;
-}
-
-.chip:hover:not(:disabled) {
-  border-color: var(--accent-border);
-}
-
-.chip-selected {
-  border-color: var(--accent);
-  background: var(--accent-bg);
-  color: var(--text-h);
-}
-
-.chip:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.chip-name {
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.chip-value {
-  font-family: var(--mono);
-  font-size: 13px;
-}
-
-.chip-busy .chip-value {
-  color: #d97a4d;
-}
-
-/* Slot strip */
-
-.slot-strip {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.slot-strip-bars {
-  display: flex;
-  align-items: flex-end;
-  gap: 2px;
-  height: 140px;
-  padding: 0 1px;
-  border-bottom: 1px solid var(--border);
-}
-
-.slot-bar {
-  flex: 1;
-  min-width: 4px;
-  padding: 0;
-  border: none;
-  border-radius: 2px 2px 0 0;
-  background: var(--accent);
-  cursor: pointer;
-}
-
-.slot-bar:hover:not(:disabled) {
-  opacity: 0.8;
-}
-
-.slot-bar-unbookable {
-  background: var(--border);
-  cursor: not-allowed;
-}
-
-.slot-bar-selected {
-  outline: 2px solid var(--text-h);
-  outline-offset: -2px;
-}
-
-.slot-bar-cheapest:not(.slot-bar-unbookable) {
-  box-shadow: 0 -3px 0 0 #3fb87a inset;
-}
-
-.slot-strip-axis {
-  display: flex;
-  gap: 2px;
-  padding: 0 1px;
-}
-
-.slot-strip-tick {
-  flex: 1;
-  min-width: 4px;
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text);
-  text-align: center;
-}
-
-/* Comparison row */
-
-.comparison-row {
+.summary-row {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -186,33 +110,337 @@ section h2 {
   background: var(--code-bg);
 }
 
-.comparison-row-empty {
+.summary-row-empty {
   color: var(--text-h);
 }
 
-.comparison-figures {
+.summary-figures {
   display: flex;
   gap: 32px;
 }
 
-.comparison-figure {
+.summary-figure {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.comparison-label {
+.summary-label {
   font-size: 13px;
   color: var(--text);
 }
 
-.comparison-value {
+.summary-value {
   font-family: var(--mono);
   font-size: 22px;
   color: var(--text-h);
 }
 
-.comparison-threshold {
+.summary-threshold {
   margin: 0;
   font-size: 14px;
+}
+
+/* Teams-style grid: every row shares the same 3-column template, so the
+   middle (time track) column resolves to the same pixel width and
+   position in every row - that's what keeps meeting blocks, the
+   candidate band, cost bars and hour ticks aligned on one axis. */
+
+.teams-grid {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.teams-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 90px;
+  align-items: center;
+  column-gap: 12px;
+  padding: 0 16px;
+}
+
+.teams-track {
+  position: relative;
+}
+
+.teams-header-row {
+  padding-top: 14px;
+  padding-bottom: 2px;
+}
+
+.teams-header-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+.teams-header-label-right {
+  text-align: right;
+}
+
+/* Hour ticks */
+
+.teams-ticks-row {
+  padding-top: 10px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.teams-ticks {
+  height: 16px;
+}
+
+.teams-tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text);
+}
+
+/* Person rows */
+
+.teams-person-row {
+  height: 56px;
+  border-bottom: 1px solid var(--border);
+}
+
+.teams-person-row:last-of-type {
+  border-bottom: none;
+}
+
+.teams-name {
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-h);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.teams-name:hover:not(:disabled) {
+  border-color: var(--accent-border);
+}
+
+.teams-name-selected {
+  background: var(--accent-bg);
+}
+
+.teams-name:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.teams-track-dim {
+  opacity: 0.4;
+}
+
+.teams-person-row .teams-track {
+  height: 28px;
+}
+
+.teams-gridline {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--gridline);
+}
+
+.teams-meeting-block {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 4px;
+  background: var(--border);
+}
+
+.teams-candidate-band {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  border-radius: 4px;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+}
+
+.teams-candidate-band-busy {
+  background: var(--busy-bg);
+  border-color: var(--busy-border);
+}
+
+.teams-cost {
+  font-family: var(--mono);
+  font-size: 13px;
+  text-align: right;
+  color: var(--text);
+}
+
+.teams-cost-busy {
+  color: var(--busy);
+}
+
+/* Cost lane */
+
+.teams-cost-lane-row {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.teams-cost-lane {
+  height: 100px;
+  cursor: pointer;
+}
+
+.teams-cost-bar {
+  position: absolute;
+  bottom: 0;
+  border-radius: 2px 2px 0 0;
+  background: var(--accent);
+}
+
+.teams-cost-bar-unbookable {
+  background: var(--border);
+}
+
+.teams-cost-bar-selected {
+  outline: 2px solid var(--text-h);
+  outline-offset: -2px;
+}
+
+.teams-cost-bar-cheapest:not(.teams-cost-bar-unbookable) {
+  box-shadow: 0 -3px 0 0 var(--cheapest) inset;
+}
+
+/* Calendar view: people as columns, time running downwards. Every row
+   (header, body, footer) shares the same grid-template-columns (set
+   inline, since the column count is dynamic), so a person's column lines
+   up across all three the same way the scheduler's rows line up on the
+   shared horizontal axis. */
+
+.calendar-view {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.calendar-row {
+  display: grid;
+  column-gap: 8px;
+  padding: 0 16px;
+}
+
+.calendar-header {
+  align-items: center;
+  padding-top: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.calendar-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-h);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-body {
+  height: 560px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.calendar-hours,
+.calendar-track {
+  position: relative;
+}
+
+.calendar-track {
+  border-left: 1px solid var(--border);
+}
+
+.calendar-hour-tick {
+  position: absolute;
+  left: 0;
+  transform: translateY(-50%);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text);
+}
+
+.calendar-gridline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--gridline);
+}
+
+.calendar-block {
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  min-height: 20px;
+  box-sizing: border-box;
+  padding: 3px 5px;
+  border-radius: 4px;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  overflow: hidden;
+}
+
+.calendar-block-time {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-h);
+}
+
+.calendar-block-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.calendar-footer {
+  align-items: center;
+  padding-top: 10px;
+  padding-bottom: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.calendar-footer-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+.calendar-day-penalty {
+  font-family: var(--mono);
+  font-size: 14px;
+  text-align: center;
+  color: var(--text-h);
 }

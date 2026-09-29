@@ -11,6 +11,17 @@
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
+  /* Hand-picked semantic colours (busy indicator, cheapest-slot highlight,
+     structural gridlines) - kept separate from --border/--accent since
+     they carry meaning rather than just layout, and need their own
+     light/dark tuning rather than reusing a neutral that happens to be
+     nearby. */
+  --busy: #b85c2e;
+  --busy-bg: rgba(184, 92, 46, 0.12);
+  --busy-border: rgba(184, 92, 46, 0.45);
+  --cheapest: #1f9d5c;
+  --gridline: #dad8dd;
+
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
@@ -43,11 +54,61 @@
     --social-bg: rgba(47, 48, 58, 0.5);
     --shadow:
       rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+
+    --busy: #d97a4d;
+    --busy-bg: rgba(217, 122, 77, 0.18);
+    --busy-border: rgba(217, 122, 77, 0.5);
+    --cheapest: #3fb87a;
+    --gridline: #2e303a;
   }
 
   #social .button-icon {
     filter: invert(1) brightness(2);
   }
+}
+
+/* Explicit overrides for the in-app theme toggle. Same values as the
+   prefers-color-scheme blocks above, just keyed by an attribute instead
+   of a media query so a user's explicit choice wins over their OS
+   setting - kept in sync by hand since a light-dark() function isn't
+   used elsewhere in this file. Higher specificity than plain :root
+   settles which one wins regardless of source order. */
+:root[data-theme="light"] {
+  --text: #6b6375;
+  --text-h: #08060d;
+  --bg: #fff;
+  --border: #e5e4e7;
+  --code-bg: #f4f3ec;
+  --accent: #aa3bff;
+  --accent-bg: rgba(170, 59, 255, 0.1);
+  --accent-border: rgba(170, 59, 255, 0.5);
+  --social-bg: rgba(244, 243, 236, 0.5);
+  --shadow:
+    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  --busy: #b85c2e;
+  --busy-bg: rgba(184, 92, 46, 0.12);
+  --busy-border: rgba(184, 92, 46, 0.45);
+  --cheapest: #1f9d5c;
+  --gridline: #dad8dd;
+}
+
+:root[data-theme="dark"] {
+  --text: #9ca3af;
+  --text-h: #f3f4f6;
+  --bg: #16171d;
+  --border: #2e303a;
+  --code-bg: #1f2028;
+  --accent: #c084fc;
+  --accent-bg: rgba(192, 132, 252, 0.15);
+  --accent-border: rgba(192, 132, 252, 0.5);
+  --social-bg: rgba(47, 48, 58, 0.5);
+  --shadow:
+    rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+  --busy: #d97a4d;
+  --busy-bg: rgba(217, 122, 77, 0.18);
+  --busy-border: rgba(217, 122, 77, 0.5);
+  --cheapest: #3fb87a;
+  --gridline: #2e303a;
 }
 
 #root {
