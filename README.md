@@ -31,6 +31,15 @@ It has two jobs:
 2. Act as a social cue to reconsider whether the meeting, its length, or
    its invite list is justified at all.
 
+The core model:
+
+$$\[
+P(M) \;=\; \bigl(|W| - c\bigr)
+\;+\; \underbrace{\sum_{g \in G(M)} - \max\bigl(0,\; |g| - c\bigr)}_{\text{fragmentation}}
+\;+\; \underbrace{\lambda \sum_{r \in R(M)} \max\bigl(0,\; |r| - r^{*}\bigr)}_{\text{fatigue}}
+\;+\; \underbrace{\mu \cdot \mathbf{1}\Bigl[\, \nexists\, g \in G(M) : g \subseteq L \;\wedge\; |g| \ge \ell \,\Bigr]}_{\text{lunch}}
+\]$$
+
 For each person, each day, a working window $W$ (default 09:00 to 17:00)
 is partitioned by that day's meetings into meeting runs and free gaps.
 Two costs eat into the window:
