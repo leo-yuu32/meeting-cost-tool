@@ -22,12 +22,7 @@ single-gap booking, and the model's limitations, is in
 [`docs/focus-cost-model.pdf`](./docs/focus-cost-model.pdf)
 ([LaTeX source](./docs/focus-cost-model.tex)).
 
-The core premise: fatigue is driven mainly by the **fragmentation** of
-focus time, not by total meeting hours. A calendar with three short gaps
-between meetings can leave someone with less usable focus time than one
-with a single long block, even at the same total meeting load. This tool
-prices that effect in minutes, at the moment an organiser is choosing a
-slot, duration, or invite list, not after the fact.
+## How the model works
 
 It has two jobs:
 
@@ -35,12 +30,6 @@ It has two jobs:
    convenient for the organiser.
 2. Act as a social cue to reconsider whether the meeting, its length, or
    its invite list is justified at all.
-
-This is **not** an attendee-facing tool and **not** a reporting
-dashboard; the per-attendee numbers below are for the organiser at
-booking time only.
-
-## How the model works
 
 For each person, each day, a working window $W$ (default 09:00 to 17:00)
 is partitioned by that day's meetings into meeting runs and free gaps.
